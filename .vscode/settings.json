@@ -1,0 +1,65 @@
+{
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": true,
+  "python.linting.flake8Args": ["--config=.flake8"],
+  "python.analysis.extraPaths": ["backend", "./services/backend"],
+  "python.analysis.autoImportCompletions": false,
+  "[python]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    // No Black yet.
+    "editor.formatOnPaste": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": false,
+      "source.organizeImports": false // Not working as needed
+    }
+  },
+  // Frontend
+  "html.autoCreateQuotes": false,
+  "[javascript]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
+  },
+  "[vue]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
+  },
+  "[html]": {
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[css]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
+  },
+  "[js]": {
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  // Common
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  // Hide folders from explorer
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/.pytest_cache": true,
+    "**/node_modules": true,
+    "**/venv/": true,
+    "**/__pycache__": true,
+    "**/.ipynb_checkpoints": true
+  },
+  "volar.inlayHints.eventArgumentInInlineHandlers": false
+}

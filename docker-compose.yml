@@ -1,0 +1,41 @@
+version: "3.4"
+
+services:
+  backend:
+    build:
+      context: ./services/backend
+      target: debug
+    ports:
+      - 5000:5000
+      - 5678:5678
+    environment:
+      - DATABASE_URL=postgres://apinha:apinha@db:5432/apinha_db
+      - UPLOAD_ROOT=/usr/src/uploads
+      - FRONTEND_URL=http://localhost:3000
+    volumes:
+      - ./services/backend:/usr/src/app
+      - upload_root:/usr/src/uploads
+    command: python -m debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn src.main:app --reload --host 0.0.0.0 --port 5000
+
+  frontend:
+    build: ./services/frontend
+    volumes:
+      - ./services/frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - 3000:3000
+
+  db:
+    image: postgres:15.2
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=apinha
+      - POSTGRES_PASSWORD=apinha
+      - POSTGRES_DB=apinha_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+volumes:
+  postgres_data:
+  upload_root:
