@@ -44,11 +44,11 @@ function createAxios() {
       if (error.response.status === 401) {
         userStore.handleLogout();
       } else if (error.response.status === 404) {
-        router.push({ name: "404" });
+        router.push({ name: "result", query: { code: "404" } });
       } else if (error.response.status === 500) {
         window.$message.error("Ошибка на сервере");
       } else {
-        window.$message.error(error.response.data.detail);
+        window.$message.error(error.response.data.detail, { duration: 5000 });
       }
 
       return Promise.reject(error);

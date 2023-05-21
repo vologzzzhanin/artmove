@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from tortoise.contrib.fastapi import HTTPNotFoundError
 
 import src.crud.users as crud
 from src.auth.jwthandler import (
     create_token,
+    get_authenticated_user,
     get_current_user,
-    get_verified_user,
 )
 from src.auth.users import validate_user
-from src.auth.emails import send_confirmation_email
+from src.auth.emails import send_confirmation_email, send_recovery_email
 from src.config import settings
 from src.schemas.token import Status, VerificationToken
 from src.schemas.users import (
+    RestoreUserPassword,
     UpdateUserPassword,
     UserInSchema,
     UserOutSchema,
@@ -23,26 +23,48 @@ from src.schemas.users import (
 router = APIRouter(tags=["Users"])
 
 
-@router.post("/register", response_model=UserOutSchema)
-async def create_user(user: UserInSchema) -> UserOutSchema:
+@router.post("/register")
+async def create_user(user: UserInSchema) -> JSONResponse:
     new_user = await crud.create_user(user)
     confirmation_token = create_token(
-        data={"sub": str(new_user.id)},
+        user=new_user,
         expires_in=settings.confirmation_token_expires_in,
     )
     await send_confirmation_email(user, confirmation_token)
 
-    return new_user
+    content = {"message": "A confirmation email has been sent"}
+    return JSONResponse(content=content)
 
 
 @router.post("/email_confirm")
-async def verify_user(data: VerificationToken) -> UserOutSchema:
-    user = await get_verified_user(data.token)
-    return await crud.verify_user(user.id)
+async def verify_user(data: VerificationToken) -> JSONResponse:
+    user, expired = await get_authenticated_user(data.token)
+
+    if user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User has already been verified",
+        )
+
+    if expired:
+        new_confirmation_token = create_token(
+            user=user,
+            expires_in=settings.confirmation_token_expires_in,
+        )
+        await send_confirmation_email(user, new_confirmation_token)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This email verification token has expired. A new token has been sent to your email",
+        )
+
+    data = UserUpdateSchema(is_verified=True)
+    await crud.update_user(user.id, data)
+
+    return Status(message="You have successfully verify account")
 
 
 @router.post("/login")
-async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa TODO разобраться с этим дерьмом https://www.youtube.com/watch?v=lfT6a9VqyLM
+async def login(user: OAuth2PasswordRequestForm = Depends()) -> JSONResponse:  # noqa TODO разобраться с этим дерьмом https://www.youtube.com/watch?v=lfT6a9VqyLM
     user = await validate_user(user)
 
     if not user:
@@ -53,7 +75,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa TODO ра�
         )
 
     access_token = create_token(
-        data={"sub": user.email},
+        user=user,
         expires_in=settings.access_token_expires_in,
     )
     content = {"message": "You've successfully logged in. Welcome back!"}
@@ -71,46 +93,33 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa TODO ра�
     return response
 
 
-@router.get(
-    "/users/whoami", response_model=UserOutSchema, dependencies=[Depends(get_current_user)]
-)
+@router.get("/users/whoami")
 async def read_users_me(current_user: UserOutSchema = Depends(get_current_user)) -> UserOutSchema:
     return current_user
 
 
-@router.post(
-    "/update_password",
-    response_model=UserOutSchema,
-    dependencies=[Depends(get_current_user)]
-)
-async def update_password(
-    user_password: UpdateUserPassword,
-    current_user: UserOutSchema = Depends(get_current_user),
-) -> UserOutSchema:
-    return await crud.update_user_password(user_password, current_user)
+@router.post("/restore_password")
+async def restore_password(user: RestoreUserPassword) -> JSONResponse:
+    db_user = await crud.get_user_by_email(email=user.email)
+
+    recovery_token = create_token(
+        user=db_user,
+        expires_in=settings.recovery_token_expires_in,
+    )
+    await send_recovery_email(user, recovery_token)
+
+    content = {"message": "A password reset link has been sent to your email"}
+    return JSONResponse(content=content)
 
 
-@router.patch(
-    "/user/{user_id}",
-    response_model=UserOutSchema,
-    responses={404: {"model": HTTPNotFoundError}},
-    dependencies=[Depends(get_current_user)],
-)
-async def update_user(  # TODO на удаление
-    user_id: int,
-    user_data: UserUpdateSchema,
-    current_user: UserOutSchema = Depends(get_current_user),
-) -> UserOutSchema:
-    return await crud.update_user(user_id, user_data, current_user)
+@router.post("/update_password")
+async def update_password(data: UpdateUserPassword) -> JSONResponse:
+    user, expired = await get_authenticated_user(data.token)
 
+    if expired:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This password reset link has expired",
+        )
 
-@router.delete(
-    "/user/{user_id}",
-    response_model=Status,
-    responses={404: {"model": HTTPNotFoundError}},
-    dependencies=[Depends(get_current_user)],
-)
-async def delete_user(
-    user_id: int, current_user: UserOutSchema = Depends(get_current_user)
-) -> Status:
-    return await crud.delete_user(user_id, current_user)
+    return await crud.update_user_password(user.id, data)

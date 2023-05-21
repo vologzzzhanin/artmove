@@ -1,12 +1,18 @@
 import { defineStore } from "pinia";
-import { loginUser, registerUser, getUserData, verifyUser } from "@/api/user";
+import {
+  loginUser,
+  registerUser,
+  getUserData,
+  verifyUser,
+  updatePassword,
+  restorePassword,
+} from "@/api/user";
 
 export const useUserStore = defineStore("user", {
   state() {
     return {
       userData: {},
       isAuthenticated: localStorage.getItem("isAuthenticated") || "false",
-      isVerified: undefined,
     };
   },
   getters: {
@@ -23,6 +29,7 @@ export const useUserStore = defineStore("user", {
         await loginUser(User);
         this.isAuthenticated = "true";
         localStorage.setItem("isAuthenticated", "true");
+        this.router.push({ name: "home" });
       } catch (resp) {
         console.log(resp);
       }
@@ -31,19 +38,31 @@ export const useUserStore = defineStore("user", {
       this.$reset();
       try {
         await registerUser({ email, password, full_name: fullName });
-        await this.login(email, password);
-        this.router.push({ name: "home" });
+        this.router.push({
+          name: "result",
+          query: { code: "userRegistrationSuccess" },
+        });
       } catch (resp) {
         console.log(resp);
+        this.router.push({
+          name: "result",
+          query: { code: "userRegistrationError" },
+        });
       }
     },
     async verifyUser(token) {
       try {
         await verifyUser({ token });
-        this.isVerified = true;
+        this.router.push({
+          name: "result",
+          query: { code: "userVerificationSuccess" },
+        });
       } catch (resp) {
-        this.isVerified = false;
         console.log(resp);
+        this.router.push({
+          name: "result",
+          query: { code: "userVerificationError" },
+        });
       }
     },
     async getUserData() {
@@ -53,6 +72,33 @@ export const useUserStore = defineStore("user", {
       } catch (resp) {
         console.log(resp);
         this.handleLogout();
+      }
+    },
+    async restorePassword(email) {
+      try {
+        await restorePassword({ email });
+        this.router.push({
+          name: "result",
+          query: { code: "passwordRestoreSuccess" },
+        });
+      } catch (resp) {
+        console.log(resp);
+        this.router.push({
+          name: "result",
+          query: { code: "passwordRestoreError" },
+        });
+      }
+    },
+    async updatePassword(token, password) {
+      try {
+        await updatePassword({ token, password });
+        this.router.push({ name: "login" });
+      } catch (resp) {
+        console.log(resp);
+        this.router.push({
+          name: "result",
+          query: { code: "passwordUpdateError" },
+        });
       }
     },
     handleLogout() {

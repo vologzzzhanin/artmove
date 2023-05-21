@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expires_in: int
     confirmation_token_expires_in: int
+    recovery_token_expires_in: int
 
     database_url: str
     frontend_url: str

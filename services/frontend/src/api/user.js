@@ -15,3 +15,11 @@ export const loginUser = (data) => {
 export const getUserData = () => {
   return http.get("/users/whoami");
 };
+
+export const updatePassword = (data) => {
+  return http.post("/update_password", data);
+};
+
+export const restorePassword = (data) => {
+  return http.post("/restore_password", data);
+};

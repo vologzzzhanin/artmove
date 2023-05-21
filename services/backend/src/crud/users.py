@@ -1,17 +1,24 @@
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
+from pydantic import EmailStr
 from tortoise.exceptions import DoesNotExist, IntegrityError
 
 from src.database.models import Users
 from src.schemas.token import Status
-from src.schemas.users import UserOutSchema
-
+from src.schemas.users import (
+    UpdateUserPassword,
+    UserInSchema,
+    UserOutSchema,
+    UserUpdateSchema,
+)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-async def create_user(user) -> UserOutSchema:
+async def create_user(user: UserInSchema) -> UserOutSchema:
     user.password = pwd_context.encrypt(user.password)
+
+    await Users.filter(email=user.email).delete()
 
     try:
         user_obj = await Users.create(**user.dict(exclude_unset=True))
@@ -39,28 +46,24 @@ async def get_user(user_id: int) -> UserOutSchema:
         )
 
 
-async def update_user_password(user, current_user) -> Status:
-    current_user.password = pwd_context.encrypt(user.password)
-    current_user.save()
-
-    return Status(message="You have successfully updated password")
-
-
-async def update_user(user_id, user, current_user) -> UserOutSchema:
-    db_user = await get_user(user_id)
-
-    if db_user.id == current_user.id or current_user.is_superuser:
-        await Users.filter(id=user_id).update(**user.dict(exclude_unset=True))
-        return await UserOutSchema.from_queryset_single(Users.get(id=user_id))
-
-    raise HTTPException(status_code=403, detail="Not authorized to update")
+async def get_user_by_email(email: EmailStr) -> UserOutSchema:
+    try:
+        return await UserOutSchema.from_queryset_single(Users.get(email=email))
+    except DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User with email {email} not found",
+        )
 
 
-async def delete_user(user_id, current_user) -> Status:
-    if current_user.is_superuser:
-        deleted_count = await Users.filter(id=user_id).delete()
-        if not deleted_count:
-            raise HTTPException(status_code=404, detail=f"User {user_id} not found")
-        return Status(message=f"Deleted user {user_id}")
+async def update_user(user_id: int, data: UserUpdateSchema) -> UserOutSchema:
+    await Users.filter(id=user_id).update(**data.dict(exclude_unset=True))
+    return await UserOutSchema.from_queryset_single(Users.get(id=user_id))
 
-    raise HTTPException(status_code=403, detail="Not authorized to delete")
+
+async def update_user_password(user_id: int, data: UpdateUserPassword) -> Status:
+    db_user = await Users.get(id=user_id)
+    db_user.password = pwd_context.encrypt(data.password)
+    db_user.save()
+
+    return Status(message="You have successfully update password")

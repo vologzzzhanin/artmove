@@ -3,10 +3,11 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/store/modules/user";
 import { useAppStore } from "@/store/modules/app";
+import CredentialsForm from "@/components/CredentialsForm.vue";
+import FormHeader from "@/components/FormHeader.vue";
 import {
   Person24Regular,
   PersonAdd24Regular,
-  MailOpenPerson24Regular,
   Fingerprint24Regular,
 } from "@vicons/fluent";
 
@@ -14,31 +15,16 @@ const userStore = useUserStore();
 const appStore = useAppStore();
 const router = useRouter();
 
-const credentials = ref({
-  email: "",
-  password: "",
-});
-const rules = {
-  email: {
-    required: true,
-    message: "Введите email",
-  },
-  password: {
-    required: true,
-    message: "Введите пароль",
-  },
-};
 const formRef = ref(null);
+const setFormRef = (el) => {
+  formRef.value = el;
+};
 
-const login = () => {
+const login = async () => {
   formRef.value.validate(async (errors) => {
     if (!errors) {
-      await userStore.login(
-        credentials.value.email,
-        credentials.value.password
-      );
-      // Go to home page
-      router.push({ name: "home" });
+      const { email, password } = formRef.value.model;
+      await userStore.login(email, password);
     }
   });
 };
@@ -46,45 +32,23 @@ const login = () => {
 const goToRegistration = () => {
   router.push({ name: "register" });
 };
+const goToRestorePassword = () => {
+  router.push({ name: "restore_password" });
+};
 </script>
+
 <template>
   <n-space justify="center" style="height: 100vh; align-items: center">
-    <n-card>
-      <n-form
-        ref="formRef"
-        :model="credentials"
-        :rules="rules"
-        :show-require-mark="false"
-        @keyup.enter="login"
-      >
-        <n-form-item path="email" label="Электронная почта">
-          <n-input
-            v-model:value="credentials.email"
-            @keydown.enter.prevent
-            placeholder="Email"
-            clearable
-          >
-            <template #prefix>
-              <n-icon size="22" :component="MailOpenPerson24Regular" />
-            </template>
-          </n-input>
-        </n-form-item>
-        <n-form-item path="password" label="Пароль">
-          <n-input
-            v-model:value="credentials.password"
-            type="password"
-            @keydown.enter.prevent
-            show-password-on="mousedown"
-            placeholder="Пароль"
-            ><template #prefix>
-              <n-icon size="22" :component="Fingerprint24Regular" />
-            </template>
-          </n-input>
-        </n-form-item>
-      </n-form>
+    <n-card style="min-width: 25vw">
+      <CredentialsForm
+        :fields="['email', 'password']"
+        @approve="login"
+        @set-form-ref="setFormRef"
+      />
       <n-button
         block
         type="primary"
+        size="large"
         secondary
         strong
         @click="login"
@@ -93,10 +57,24 @@ const goToRegistration = () => {
         <template #icon> <n-icon :component="Person24Regular" /> </template>
         Вход
       </n-button>
-      <n-button block type="primary" secondary strong @click="goToRegistration">
-        <template #icon> <n-icon :component="PersonAdd24Regular" /> </template>
-        Регистрация
-      </n-button>
+      <n-divider />
+      <n-space justify="space-between">
+        <n-button text @click="goToRegistration">
+          <template #icon>
+            <n-icon :component="PersonAdd24Regular" />
+          </template>
+          Регистрация
+        </n-button>
+        <n-button text @click="goToRestorePassword">
+          <template #icon>
+            <n-icon :component="Fingerprint24Regular" />
+          </template>
+          Восстановить пароль
+        </n-button>
+      </n-space>
+      <template #header>
+        <FormHeader />
+      </template>
     </n-card>
   </n-space>
 </template>
