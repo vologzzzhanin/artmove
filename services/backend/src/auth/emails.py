@@ -18,62 +18,45 @@ config = ConnectionConfig(
 )
 
 
-async def send_confirmation_email(user: UserOutSchema, token: str) -> None:
-    template = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-    </head>
-    <body>
-        <div style="display:flex; align-items: center; flex-direction: column">
-            <h3>Account confirmation</h3>
-            <br>
-            <a style="display:flex; margin-top: 1rem; padding: 1rem; border-radius: 0.5rem;
-            font-size:1rem; background: #0275d8; color:white"
-            href="{settings.frontend_url}/email_confirm/?token={token}">
-                Please click to verify your account
-            </a>
-        </div>
-    </body>
-    </html>
-    """
-    subject = settings.service_name + " account confirmation"
+class AuthorizationEmail:
+    def __init__(
+        self,
+        *,
+        header: str,
+        route: str,
+        link_text: str,
+        config: ConnectionConfig = config,
+    ) -> None:
+        self.header = header
+        self.route = route
+        self.link_text = link_text
+        self.service=FastMail(config)
 
-    await send_email(email=user.email, template=template, subject=subject)
+    def body(self, token: str) -> str:
+        return f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                <div style="display:flex; align-items: center; flex-direction: column">
+                    <h3>{self.header}</h3>
+                    <br>
+                    <a style="display:flex; margin-top: 1rem; padding: 1rem; border-radius: 0.5rem; font-size:1rem; background: #0275d8; color:white" href="{settings.frontend_url}/{self.route}/?token={token}">{self.link_text}</a>
+                </div>
+            </body>
+            </html>"""
 
+    @property
+    def subject(self) -> str:
+        return f"{settings.service_name} {self.header.lower()}"
 
-async def send_recovery_email(user: UserOutSchema, token: str) -> None:
-    template = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-    </head>
-    <body>
-        <div style="display:flex; align-items: center; flex-direction: column">
-            <h3>Password recovery</h3>
-            <br>
-            <a style="display:flex; margin-top: 1rem; padding: 1rem; border-radius: 0.5rem;
-            font-size:1rem; background: #0275d8; color:white"
-            href="{settings.frontend_url}/update_password/?token={token}">
-                Please click to update your password
-            </a>
-        </div>
-    </body>
-    </html>
-    """
-    subject = settings.service_name + " password recovery"
-
-    await send_email(email=user.email, template=template, subject=subject)
-
-
-async def send_email(email: EmailStr, template: str, subject: str) -> None:
-    message = MessageSchema(
-        subject=subject,
-        recipients=[email],
-        body=template,
-        subtype=MessageType.html,
-    )
-    mail_service = FastMail(config)
-    await mail_service.send_message(message)
+    async def send(self, user: UserOutSchema, token: str) -> None:
+        message = MessageSchema(
+            recipients=[user.email],
+            subject=self.subject,
+            body=self.body(token),
+            subtype=MessageType.html,
+        )
+        await self.service.send_message(message)

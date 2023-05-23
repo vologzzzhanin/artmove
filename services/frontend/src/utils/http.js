@@ -43,6 +43,7 @@ function createAxios() {
 
       if (error.response.status === 401) {
         userStore.handleLogout();
+        window.$message.error(error.response.data.detail, { duration: 5000 });
       } else if (error.response.status === 404) {
         router.push({ name: "result", query: { code: "404" } });
       } else if (error.response.status === 500) {

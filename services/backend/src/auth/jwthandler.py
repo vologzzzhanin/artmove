@@ -15,6 +15,10 @@ from src.schemas.users import UserOutSchema
 
 
 class OAuth2PasswordBearerCookie(OAuth2):
+    """
+    Unlike the standard OAuth2PasswordBearer,
+    it takes the authorization data not from Headers, but from the Cookies
+    """
     def __init__(
         self,
         token_url: str,
@@ -28,9 +32,8 @@ class OAuth2PasswordBearerCookie(OAuth2):
         super().__init__(flows=flows, scheme_name=scheme_name, auto_error=auto_error)
 
     async def __call__(self, request: Request) -> str | None:
-        authorization: str = request.cookies.get("Authorization")
+        authorization = request.cookies.get("Authorization")
         scheme, param = get_authorization_scheme_param(authorization)
-
         if not authorization or scheme.lower() != "bearer":
             if self.auto_error:
                 raise HTTPException(
@@ -40,7 +43,6 @@ class OAuth2PasswordBearerCookie(OAuth2):
                 )
             else:
                 return None
-
         return param
 
 
@@ -57,7 +59,7 @@ def create_token(user: UserOutSchema, expires_in: int | None = None) -> str:
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
 
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "iat": datetime.utcnow()})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
     return jsonable_encoder(encoded_jwt)
@@ -89,6 +91,9 @@ class JWTHandler:
                 token_data = TokenData(email=email)
                 user = await get_user_by_email(email=token_data.email)
 
+                if self.user_has_been_modified(user):
+                    raise self.exception
+
                 return user, None if self.verify_exp else self.expired
             except ValueError:
                 raise self.exception
@@ -103,6 +108,11 @@ class JWTHandler:
             raise self.exception
 
         return exp < timegm(datetime.utcnow().utctimetuple())
+
+    def user_has_been_modified(self, user: UserOutSchema) -> bool:
+        iat = int(self.payload.get("iat"))
+
+        return iat < timegm(user.modified_at.utctimetuple())
 
 
 async def get_current_user(token: str = Depends(security)) -> UserOutSchema:

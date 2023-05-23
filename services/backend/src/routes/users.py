@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordRequestForm
 
 import src.crud.users as crud
 from src.auth.jwthandler import (
@@ -8,8 +7,8 @@ from src.auth.jwthandler import (
     get_authenticated_user,
     get_current_user,
 )
-from src.auth.users import validate_user
-from src.auth.emails import send_confirmation_email, send_recovery_email
+from src.auth.users import LoginRequestForm, validate_user
+from src.auth.emails import AuthorizationEmail
 from src.config import settings
 from src.schemas.token import Status, VerificationToken
 from src.schemas.users import (
@@ -22,6 +21,16 @@ from src.schemas.users import (
 
 router = APIRouter(tags=["Users"])
 
+confirmation_email = AuthorizationEmail(
+    header="Account confirmation",
+    route="email_confirm",
+    link_text="Please click to verify your account",
+)
+recovery_email = AuthorizationEmail(
+    header="Password recovery",
+    route="update_password",
+    link_text="Please click to update your password",
+)
 
 @router.post("/register")
 async def create_user(user: UserInSchema) -> JSONResponse:
@@ -30,7 +39,7 @@ async def create_user(user: UserInSchema) -> JSONResponse:
         user=new_user,
         expires_in=settings.confirmation_token_expires_in,
     )
-    await send_confirmation_email(user, confirmation_token)
+    await confirmation_email.send(user, confirmation_token)
 
     content = {"message": "A confirmation email has been sent"}
     return JSONResponse(content=content)
@@ -51,7 +60,7 @@ async def verify_user(data: VerificationToken) -> JSONResponse:
             user=user,
             expires_in=settings.confirmation_token_expires_in,
         )
-        await send_confirmation_email(user, new_confirmation_token)
+        await confirmation_email.send(user, new_confirmation_token)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This email verification token has expired. A new token has been sent to your email",
@@ -64,7 +73,7 @@ async def verify_user(data: VerificationToken) -> JSONResponse:
 
 
 @router.post("/login")
-async def login(user: OAuth2PasswordRequestForm = Depends()) -> JSONResponse:  # noqa TODO разобраться с этим дерьмом https://www.youtube.com/watch?v=lfT6a9VqyLM
+async def login(user: LoginRequestForm = Depends()) -> JSONResponse:
     user = await validate_user(user)
 
     if not user:
@@ -106,7 +115,7 @@ async def restore_password(user: RestoreUserPassword) -> JSONResponse:
         user=db_user,
         expires_in=settings.recovery_token_expires_in,
     )
-    await send_recovery_email(user, recovery_token)
+    await recovery_email.send(user, recovery_token)
 
     content = {"message": "A password reset link has been sent to your email"}
     return JSONResponse(content=content)

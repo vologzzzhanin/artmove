@@ -24,7 +24,7 @@ export const useUserStore = defineStore("user", {
     async login(email, password) {
       try {
         const User = new FormData();
-        User.append("username", email);
+        User.append("email", email);
         User.append("password", password);
         await loginUser(User);
         this.isAuthenticated = "true";

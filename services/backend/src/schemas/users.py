@@ -27,8 +27,10 @@ class UpdateUserPassword(BaseModel):
 UserOutSchema = pydantic_model_creator(
     Users,
     name="UserOut",
-    exclude=["password", "created_at", "modified_at", "animation", "user_images"],
+    exclude=["password", "created_at", "animation", "user_images"],
 )
 UserDatabaseSchema = pydantic_model_creator(
-    Users, name="User", exclude=["created_at", "modified_at"]
+    Users,
+    name="User",
+    exclude=["created_at", "animation", "user_images"],
 )

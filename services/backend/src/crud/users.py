@@ -18,8 +18,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 async def create_user(user: UserInSchema) -> UserOutSchema:
     user.password = pwd_context.encrypt(user.password)
 
-    await Users.filter(email=user.email).delete()
-
     try:
         user_obj = await Users.create(**user.dict(exclude_unset=True))
     except IntegrityError:
@@ -64,6 +62,6 @@ async def update_user(user_id: int, data: UserUpdateSchema) -> UserOutSchema:
 async def update_user_password(user_id: int, data: UpdateUserPassword) -> Status:
     db_user = await Users.get(id=user_id)
     db_user.password = pwd_context.encrypt(data.password)
-    db_user.save()
+    await db_user.save()
 
     return Status(message="You have successfully update password")
