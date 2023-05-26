@@ -14,7 +14,7 @@ export const useAnimationsStore = defineStore("animations", {
       animations: [],
       currentAnimation: {
         title: "",
-        compositions: [],
+        composition: [],
         background: "",
       },
       images: [],
@@ -22,7 +22,7 @@ export const useAnimationsStore = defineStore("animations", {
   },
   getters: {
     serverImages(state) {
-      return state.currentAnimation.compositions
+      return state.currentAnimation.composition
         .sort((a, b) => {
           return a.order - b.order;
         })

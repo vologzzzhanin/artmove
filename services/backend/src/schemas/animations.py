@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from src.database.models import Animations
+from src.schemas.compositions import CompositionUpdateSchema
 
 
 class AnimationInSchema(BaseModel):
@@ -15,38 +16,18 @@ AnimationOutSchema = pydantic_model_creator(
         "id", "title", "background",
         "modified_at", "author_id",
         "thumbnail_id", "thumbnail",
-        "compositions",
+        "composition",
     ],
     exclude=[
-        "compositions.image.owner",
+        "composition.image.owner",
         "thumbnail.owner",
-        "thumbnail.image_compositions",
+        "thumbnail.composition",
     ],
 )
 
 
-class Image(BaseModel):
-    """Изображение"""
-    id: int
-    title: str | None
-
-
-class Options(BaseModel):
-    """Опции композиции"""
-    opacity: float | None
-    visible: bool | None = True
-
-
-class Composition(BaseModel):
-    """Композиция"""
-    id: int
-    image: Image | None
-    order: int | None
-    options: Options | None
-
-
-class AnimationUpdate(BaseModel):
+class AnimationUpdateSchema(BaseModel):
     """Анимация"""
     title: str | None
     background: str | None
-    compositions: list[Composition] | None
+    composition: list[CompositionUpdateSchema] | None

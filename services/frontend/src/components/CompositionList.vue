@@ -13,12 +13,7 @@ const animationsStore = useAnimationsStore();
   <n-card v-for="image in animationsStore.serverImages" :key="image.id" mb-4>
     <n-space align="center">
       {{ image.order }}
-      <n-image
-        :src="image.src"
-        height="40"
-        preview-disabled
-        style="border: 1px solid var(--n-border-color)"
-      />
+      <n-image :src="image.src" height="40" preview-disabled />
       <n-button-group vertical>
         <n-button text>
           <template #icon>
@@ -44,6 +39,7 @@ const animationsStore = useAnimationsStore();
           <n-icon size="24" :component="Delete48Regular" />
         </template>
       </n-button>
+      <n-input v-model:value="image.title" />
     </n-space>
   </n-card>
 </template>

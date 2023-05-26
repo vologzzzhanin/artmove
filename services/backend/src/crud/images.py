@@ -4,12 +4,11 @@ import os
 import secrets
 from PIL import Image
 
-from fastapi import HTTPException, UploadFile
-from tortoise import transactions
+from fastapi import HTTPException, UploadFile, status
 
 from src.config import settings
 from src.database.models import Images
-from src.schemas.images import ImageOutSchema
+from src.schemas.images import ImageOutSchema, ImageUpdateSchema
 from src.schemas.users import UserOutSchema
 
 
@@ -32,10 +31,12 @@ async def upload_single_image(
         )
         return await ImageOutSchema.from_queryset_single(Images.get(id=image_obj.id))
     else:
-        raise HTTPException(status_code=422, detail=f"File '{image.filename}' is not an valid image")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"File '{image.filename}' is not an valid image",
+        )
 
 
-@transactions.atomic()
 async def upload_images(
     images: list[UploadFile],
     current_user: UserOutSchema,
@@ -66,3 +67,12 @@ async def upload_thumbnail(
     thumbnail = UploadFile(thumb_io, size=background.size, filename="thumbnail.png")
 
     return await upload_single_image(thumbnail, current_user)
+
+
+async def update_image(image: ImageUpdateSchema) -> ImageOutSchema | None:
+    image_dict = image.dict(exclude_unset=True)
+    image_id = image_dict.pop("id")
+
+    if image_dict:
+        await Images.get(id=image_id).update(**image_dict)
+        return await ImageOutSchema.from_queryset_single(Images.get(id=image_id))

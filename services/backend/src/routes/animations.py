@@ -9,7 +9,7 @@ from src.auth.jwthandler import get_current_user
 from src.schemas.animations import (
     AnimationInSchema,
     AnimationOutSchema,
-    AnimationUpdate,
+    AnimationUpdateSchema,
 )
 from src.schemas.token import Status
 from src.schemas.users import UserOutSchema
@@ -64,7 +64,7 @@ async def create_animation(
 )
 async def update_animation(
     animation_id: int,
-    animation: AnimationUpdate,
+    animation: AnimationUpdateSchema,
     current_user: UserOutSchema = Depends(get_current_user),
 ) -> AnimationOutSchema:
     return await crud.update_animation(animation_id, animation, current_user)

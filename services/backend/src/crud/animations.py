@@ -1,11 +1,15 @@
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, status
 from tortoise import transactions
 from tortoise.exceptions import DoesNotExist
 
-from src.crud.compositions import create_composition
+from src.crud.compositions import create_composition, update_composition
 from src.crud.images import upload_images, upload_thumbnail
 from src.database.models import Animations
-from src.schemas.animations import AnimationInSchema, AnimationOutSchema
+from src.schemas.animations import (
+    AnimationInSchema,
+    AnimationOutSchema,
+    AnimationUpdateSchema,
+)
 from src.schemas.token import Status
 from src.schemas.users import UserOutSchema
 
@@ -24,7 +28,10 @@ async def get_animation(animation_id: int, current_user: UserOutSchema) -> Anima
     if db_animation.author_id == current_user.id:
         return db_animation
 
-    raise HTTPException(status_code=403, detail="Not authorized to get animation")
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Not authorized to get animation",
+    )
 
 
 @transactions.atomic()
@@ -44,13 +51,14 @@ async def create_animation(
     db_animation.thumbnail = db_thumbnail
     await db_animation.save()
     # Finally map animation with images into composition
-    await create_composition(db_animation, db_images)
+    await create_composition(db_animation.id, db_images)
     return await AnimationOutSchema.from_queryset_single(Animations.get(id=db_animation.id))
 
 
+@transactions.atomic()
 async def update_animation(
     animation_id: int,
-    animation: AnimationOutSchema,
+    animation: AnimationUpdateSchema,
     current_user: UserOutSchema,
 ) -> AnimationOutSchema:
     try:
@@ -58,23 +66,39 @@ async def update_animation(
     except DoesNotExist:
         raise HTTPException(status_code=404, detail=f"Animation {animation_id} not found")
 
+    animation_dict = animation.dict(exclude_unset=True)
     if db_animation.author_id == current_user.id:
-        await Animations.filter(id=animation_id).update(**animation.dict(exclude_unset=True))
+        if _ := animation_dict.pop("composition", None):
+            await update_composition(animation_id, animation.composition)
+
+        await Animations.filter(id=animation_id).update(**animation_dict)
         return await AnimationOutSchema.from_queryset_single(Animations.get(id=animation_id))
 
-    raise HTTPException(status_code=403, detail="Not authorized to update")
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Not authorized to update",
+    )
 
 
 async def delete_animation(animation_id: int, current_user: UserOutSchema) -> Status:
     try:
         db_animation = await AnimationOutSchema.from_queryset_single(Animations.get(id=animation_id))
     except DoesNotExist:
-        raise HTTPException(status_code=404, detail=f"Animation {animation_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Animation {animation_id} not found",
+        )
 
     if db_animation.author_id == current_user.id:
         deleted_count = await Animations.filter(id=animation_id).delete()
         if not deleted_count:
-            raise HTTPException(status_code=404, detail=f"Animation {animation_id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Animation {animation_id} not found",
+            )
         return Status(message=f"Deleted animation {animation_id}")
 
-    raise HTTPException(status_code=403, detail="Not authorized to delete")
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Not authorized to delete",
+    )

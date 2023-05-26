@@ -7,7 +7,6 @@ class Users(models.Model):
     email = fields.CharField(max_length=255, unique=True, null=False)
     password = fields.CharField(max_length=255, null=True)
     full_name = fields.CharField(max_length=128, null=True)
-    is_superuser = fields.BooleanField(default=False)
     is_verified = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     modified_at = fields.DatetimeField(auto_now=True)
@@ -45,7 +44,7 @@ class Images(models.Model):
 class Compositions(models.Model):
     """Композиция из изображений, составляющая анимацию"""
     id = fields.IntField(pk=True)
-    animation = fields.ForeignKeyField("models.Animations", related_name="compositions")
-    image = fields.ForeignKeyField("models.Images", related_name="image_compositions")
+    animation = fields.ForeignKeyField("models.Animations", related_name="composition")
+    image = fields.ForeignKeyField("models.Images", related_name="composition")
     order = fields.SmallIntField()
     options = fields.JSONField(null=True)
