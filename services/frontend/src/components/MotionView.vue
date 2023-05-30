@@ -32,6 +32,10 @@ onUpdated(() => {
   emit("initImageMotions", imageMotions);
 });
 
+const imageProps = (image) => {
+  return { style: { opacity: image?.options?.opacity || 1 } };
+};
+
 const usedHeight = 120; // Found by trial and error method
 const dimensions = computed(() => {
   if (props.width) {
@@ -64,7 +68,8 @@ defineExpose({ refresh });
       v-for="(image, index) in props.images"
       :ref="setImageRef"
       :key="index"
-      :src="image.src"
+      :src="image?.src"
+      :img-props="imageProps(image)"
       preview-disabled
       class="overlay"
     />

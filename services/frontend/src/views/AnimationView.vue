@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useAnimationsStore } from "@/store/modules/animations";
 import { leftControls, rightControls } from "@/utils/controls";
@@ -45,8 +45,14 @@ const controlActions = {
 const imageMotions = ref({});
 const onInitImageMotions = (motions) => {
   imageMotions.value = motions;
-  console.log(motions["image0"]);
+  // console.log(motions["image0"]);
 };
+
+const visibleImages = computed(() => {
+  return animationsStore.serverImages.map((comp) => {
+    if (comp.options?.visible) return comp;
+  });
+});
 
 const test = async () => {
   let motionProperties = imageMotions.value["image0"].motionProperties;
@@ -80,7 +86,7 @@ const test = async () => {
     <n-space justify="center" class="motion">
       <MotionView
         ref="motionRef"
-        :images="animationsStore.serverImages"
+        :images="visibleImages"
         :background="animationsStore.currentAnimation.background"
         @init-image-motions="onInitImageMotions"
       />

@@ -28,8 +28,7 @@ export const useAnimationsStore = defineStore("animations", {
         })
         .map((comp) => {
           let src = getImageURL(comp.image.img);
-          const { order, options } = comp;
-          return { ...comp.image, order, options, src };
+          return { ...comp, src };
         });
     },
     clientImages(state) {
@@ -44,6 +43,13 @@ export const useAnimationsStore = defineStore("animations", {
           ? getImageURL(animation.thumbnail.img)
           : "/public/logo.png";
         return { ...animation, src };
+      });
+    },
+    composition(state) {
+      return state.currentAnimation.composition.map((comp) => {
+        const { id, order, options } = comp;
+        const image = { id: comp.image.id, title: comp.image.title };
+        return { id, image, order, options };
       });
     },
   },
@@ -100,6 +106,23 @@ export const useAnimationsStore = defineStore("animations", {
       } catch (e) {
         console.log(e);
       }
+    },
+    async moveImage(compositionId, fromIndex, toIndex) {
+      let element = this.currentAnimation.composition.find(
+        (comp) => comp.id === compositionId && comp.order === fromIndex
+      );
+      let neighbor = this.currentAnimation.composition.find(
+        (comp) => comp.order === toIndex
+      );
+      element.order = toIndex;
+      neighbor.order = fromIndex;
+      await this.updateComposition();
+    },
+    async deleteImage(compositionId) {
+      console.log(compositionId);
+    },
+    async updateComposition() {
+      await this.updateAnimation({ composition: this.composition }, true);
     },
   },
 });

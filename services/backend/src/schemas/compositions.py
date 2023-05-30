@@ -12,7 +12,7 @@ CompositionOutSchema = pydantic_model_creator(
 
 class Options(BaseModel):
     """Опции композиции"""
-    opacity: float | None = 0
+    opacity: float | None = 1
     visible: bool | None = True
 
 
