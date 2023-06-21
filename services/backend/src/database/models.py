@@ -2,7 +2,12 @@ from tortoise import fields, models
 
 
 class Users(models.Model):
-    """Пользователь"""
+    """
+    User
+
+    Created initially unverified.
+    Becomes verified (= receives all rights in the system) after confirming the email
+    """
     id = fields.IntField(pk=True)
     email = fields.CharField(max_length=255, unique=True, null=False)
     password = fields.CharField(max_length=255, null=True)
@@ -16,7 +21,7 @@ class Users(models.Model):
 
 
 class Animations(models.Model):
-    """Анимация"""
+    """Animation"""
     id = fields.IntField(pk=True)
     title = fields.CharField(max_length=255)
     background = fields.CharField(max_length=255, null=True)
@@ -30,7 +35,7 @@ class Animations(models.Model):
 
 
 class Images(models.Model):
-    """Файл с изображением"""
+    """Image file link"""
     id = fields.IntField(pk=True)
     title = fields.CharField(max_length=255)
     img = fields.CharField(max_length=255)
@@ -42,7 +47,10 @@ class Images(models.Model):
 
 
 class Compositions(models.Model):
-    """Композиция из изображений, составляющая анимацию"""
+    """
+    A composition of images in a certain order and
+    with a specified set of options, making up an animation
+    """
     id = fields.IntField(pk=True)
     animation = fields.ForeignKeyField("models.Animations", related_name="composition")
     image = fields.ForeignKeyField("models.Images", related_name="composition")

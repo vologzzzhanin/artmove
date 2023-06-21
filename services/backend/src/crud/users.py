@@ -50,7 +50,7 @@ async def get_user_by_email(email: EmailStr) -> UserOutSchema:
     except DoesNotExist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User with email {email} not found",
+            detail=f"User with email {email} not found",
         )
 
 

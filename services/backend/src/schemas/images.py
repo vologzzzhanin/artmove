@@ -10,6 +10,5 @@ ImageOutSchema = pydantic_model_creator(
 
 
 class ImageUpdateSchema(BaseModel):
-    """Изображение"""
     id: int
     title: str | None

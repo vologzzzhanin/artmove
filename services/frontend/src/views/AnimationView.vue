@@ -5,11 +5,11 @@ import { useAnimationsStore } from "@/store/modules/animations";
 import { leftControls, rightControls } from "@/utils/controls";
 import MotionView from "@/components/MotionView.vue";
 import CompositionList from "@/components/CompositionList.vue";
-import {
-  // useMotionProperties,
-  // useMotionControls,
-  useMotionTransitions,
-} from "@vueuse/motion";
+// import {
+//   useMotionProperties,
+//   useMotionControls,
+//   useMotionTransitions,
+// } from "@vueuse/motion";
 
 const animationsStore = useAnimationsStore();
 const route = useRoute();
@@ -45,7 +45,6 @@ const controlActions = {
 const imageMotions = ref({});
 const onInitImageMotions = (motions) => {
   imageMotions.value = motions;
-  // console.log(motions["image0"]);
 };
 
 const visibleImages = computed(() => {
@@ -54,23 +53,24 @@ const visibleImages = computed(() => {
   });
 });
 
-const test = async () => {
-  let motionProperties = imageMotions.value["image0"].motionProperties;
+// TODO изменение анимации на лету
+// const motionChange = async () => {
+//   let motionProperties = imageMotions.value["image0"].motionProperties;
 
-  const { push, stop } = useMotionTransitions();
+//   const { push, stop } = useMotionTransitions();
 
-  stop();
-  motionProperties.x = 0;
-  motionProperties.y = 0;
-  push("x", 25, motionProperties, {
-    duration: 2000,
-    repeat: Infinity,
-    ease: "easeInOut",
-    repeatType: "mirror",
-  });
-  // await imageMotions.value["image0"].stopTransitions();
-  // await imageMotions.value["image0"].apply("levitateX");
-};
+//   stop();
+//   motionProperties.x = 0;
+//   motionProperties.y = 0;
+//   push("x", 25, motionProperties, {
+//     duration: 2000,
+//     repeat: Infinity,
+//     ease: "easeInOut",
+//     repeatType: "mirror",
+//   });
+//   // await imageMotions.value["image0"].stopTransitions();
+//   // await imageMotions.value["image0"].apply("levitateX");
+// };
 </script>
 
 <template>

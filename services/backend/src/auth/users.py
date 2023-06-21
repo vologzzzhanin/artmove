@@ -9,6 +9,9 @@ from src.schemas.users import UserDatabaseSchema
 
 
 class LoginRequestForm:
+    """
+    Authorization form. Only differs from OAuth2 in that it uses email instead of username
+    """
     def __init__(
         self,
         grant_type: str = Form(default=None, regex="password"),

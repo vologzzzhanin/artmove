@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.encoders import jsonable_encoder
 from pydantic import ValidationError
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.encoders import jsonable_encoder
 from tortoise.contrib.fastapi import HTTPNotFoundError
 from tortoise.exceptions import DoesNotExist
 
-import src.crud.animations as crud
 from src.auth.jwthandler import get_current_user
 from src.schemas.animations import (
     AnimationInSchema,
     AnimationOutSchema,
     AnimationUpdateSchema,
 )
+import src.crud.animations as crud
 from src.schemas.token import Status
 from src.schemas.users import UserOutSchema
 
@@ -33,7 +34,7 @@ async def get_animation(
         return await crud.get_animation(animation_id, current_user)
     except DoesNotExist:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Animation does not exist",
         )
 
@@ -43,7 +44,7 @@ def checker(animation: str = Form(...)):
         model = AnimationInSchema.parse_raw(animation)
     except ValidationError as e:
         raise HTTPException(
-            status_code=422,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=jsonable_encoder(e.errors()),
         )
     return model
@@ -60,7 +61,7 @@ async def create_animation(
 
 @router.patch(
     "/animation/{animation_id}",
-    responses={404: {"model": HTTPNotFoundError}},
+    responses={status.HTTP_404_NOT_FOUND: {"model": HTTPNotFoundError}},
 )
 async def update_animation(
     animation_id: int,
@@ -72,7 +73,7 @@ async def update_animation(
 
 @router.delete(
     "/animation/{animation_id}",
-    responses={404: {"model": HTTPNotFoundError}},
+    responses={status.HTTP_404_NOT_FOUND: {"model": HTTPNotFoundError}},
 )
 async def delete_animation(
     animation_id: int,

@@ -1,5 +1,4 @@
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
-from pydantic import EmailStr
 
 from src.config import settings
 from src.schemas.users import UserOutSchema
@@ -19,6 +18,7 @@ config = ConnectionConfig(
 
 
 class AuthorizationEmail:
+    """Composing and sending emails for authorization"""
     def __init__(
         self,
         *,
