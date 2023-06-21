@@ -27,7 +27,6 @@ AnimationOutSchema = pydantic_model_creator(
 
 
 class AnimationUpdateSchema(BaseModel):
-    """Анимация"""
     title: str | None
     background: str | None
     composition: list[CompositionUpdateSchema] | None

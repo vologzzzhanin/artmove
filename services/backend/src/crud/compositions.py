@@ -19,7 +19,7 @@ async def create_composition(
             image_id=image.id,
             order=order,
         )
-        await Compositions.create(element.dict(exclude_unset=True))
+        await Compositions.create(**element.dict(exclude_unset=True))
     return await CompositionOutSchema.from_queryset(
         Compositions.filter(animation_id=animation_id)
     )

@@ -11,13 +11,12 @@ CompositionOutSchema = pydantic_model_creator(
 
 
 class Options(BaseModel):
-    """Опции композиции"""
+    """Composition options schema"""
     opacity: float | None = 1
     visible: bool | None = True
 
 
 class CompositionInSchema(BaseModel):
-    """Композиция"""
     animation_id: int
     image_id: int
     order: int
@@ -25,7 +24,6 @@ class CompositionInSchema(BaseModel):
 
 
 class CompositionUpdateSchema(BaseModel):
-    """Композиция"""
     id: int
     image: ImageUpdateSchema
     order: int

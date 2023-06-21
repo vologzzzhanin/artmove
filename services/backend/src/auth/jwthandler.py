@@ -66,6 +66,7 @@ def create_token(user: UserOutSchema, expires_in: int | None = None) -> str:
 
 
 class JWTHandler:
+    """JSON Web Token Handler"""
     def __init__(
         self,
         *,
@@ -76,6 +77,14 @@ class JWTHandler:
         self.verify_exp = verify_exp
 
     async def handle_token(self, token: str) -> tuple[UserOutSchema, bool | None]:
+        """
+        Token processing
+
+        Return the user and the optional expiration check flag
+        (needed for verification or when changing the user's password)
+
+        Causes an exception if the user was changed after the token was issued
+        """
         try:
             self.payload = jwt.decode(
                 token,

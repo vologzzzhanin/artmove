@@ -22,6 +22,7 @@ venv/
 *.local.*
 local.*
 uploads/
+scripts/
 
 # Unit test / coverage reports
 .coverage
@@ -44,5 +45,4 @@ coverage
 
 # Back
 staticfiles/
-launch.json
 celerybeat-schedule.db
